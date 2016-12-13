@@ -1,3 +1,25 @@
+# OSX Index Files
 .DS_Store
-html/*
+
+# Outlier Profiles
+html/profiles/*
+
+#Outlier Vagrant INfo
 !html/README.vagrant
+
+# Core's dependencies are managed with Composer.
+html/vendor
+
+# Ignore configuration files that may contain sensitive information.
+html/sites/*/settings*.php
+html/sites/*/services*.yml
+# Ignore paths that contain user-generated content.
+html/sites/*/files
+html/sites/*/private
+
+# Ignore SimpleTest multi-site environment.
+html/sites/simpletest
+
+# Ignore core phpcs.xml and phpunit.xml.
+html/core/phpcs.xml
+html/core/phpunit.xml

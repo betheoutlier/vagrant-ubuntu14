@@ -1,6 +1,6 @@
 # Typical Configuration Vars Below
 
-hostname: 'www.example.com'
+hostname: 'local.nexus8.com'
 ip: '192.168.25.25' #If you change this, external mysql connections will be disabled until ./projectProvision/my.cnf is updated. You must update the bind-address. 
 
 dbHost: "localhost"
