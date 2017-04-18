@@ -1,12 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\flexslider\FlexsliderListBuilder.
- *
- * @author Agnes Chisholm <amaria@66428.no-reply.drupal.org>
- */
-
 namespace Drupal\flexslider\Controller;
 
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
@@ -16,6 +9,7 @@ use Drupal\Core\Entity\EntityInterface;
  * Provides a listing of Flexslider optionset entities.
  */
 class FlexsliderListBuilder extends ConfigEntityListBuilder {
+
   /**
    * {@inheritdoc}
    */

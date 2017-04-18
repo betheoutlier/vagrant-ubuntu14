@@ -1,53 +1,38 @@
 /**
  * @file
- * Options element styles.
+ * Element options display styles.
+ *
+ * @see /webform/example_layout_basic
  */
 
-.webform-options-table {
-  max-width: 800px;
-}
-
-.webform-options-table td {
-  white-space: nowrap;
-}
-
-.webform-options-table th:last-child,
-.webform-options-table td:last-child {
-  padding: 0 4px;
-  vertical-align: middle;
-  text-align: center;
-  width: 24px;
-}
-
-.webform-options-table td input[type="text"] {
-  width: 95%;
-}
-
-.webform-options-table .webform-options-sort-weight {
-  width: 4em;
-}
-
-.webform-options-table td input[type="image"] {
-  padding: 0;
-  width: 16px;
-  height: 16px;
-}
-
-.webform-options-table .container-inline input[type="submit"] {
-  width: inherit !important;
+.webform-options-display-side-by-side > div {
+  display: inline-block;
+  margin-right: .5em;
 }
 
 /**
- * Hide AJAX throbber.
+ * Display columns for devices that are more than 400px wide.
  */
-.form-type-webform-options .ajax-progress-throbber .message {
-  display: none;
-}
+@media (min-width: 400px) {
+  .webform-options-display-two-columns {
+    display: inline-block;
+    margin-top: .4em;
+    -moz-column-count: 2;
+    -webkit-column-count: 2;
+    column-count: 2;
+  }
 
-/**
- * Suppress table drag warnings.
- */
-.webform-options-table .tabledrag-changed-warning,
-.webform-options-table .tabledrag-changed {
-  display: none !important;
+  .webform-options-display-three-columns {
+    display: inline-block;
+    margin-top: .4em;
+    -moz-column-count: 3;
+    -webkit-column-count: 3;
+    column-count: 3;
+  }
+
+  .webform-options-display-two-columns div.form-item,
+  .webform-options-display-three-columns div.form-item {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 }

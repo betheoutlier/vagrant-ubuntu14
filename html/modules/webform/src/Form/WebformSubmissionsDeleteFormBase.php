@@ -51,7 +51,7 @@ abstract class WebformSubmissionsDeleteFormBase extends ConfirmFormBase {
   protected $requestHandler;
 
   /**
-   * Constructs a new WebformResultsDeleteBaseForm object.
+   * Constructs a WebformResultsDeleteFormBase object.
    *
    * @param \Drupal\webform\WebformSubmissionStorageInterface $webform_submission_storage
    *   The webform submission storage.
@@ -68,7 +68,7 @@ abstract class WebformSubmissionsDeleteFormBase extends ConfirmFormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity.manager')->getStorage('webform_submission'),
+      $container->get('entity_type.manager')->getStorage('webform_submission'),
       $container->get('webform.request')
     );
   }

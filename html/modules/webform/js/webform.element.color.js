@@ -12,7 +12,7 @@
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormColor = {
+  Drupal.behaviors.webformColor = {
     attach: function (context) {
       $(context).find('.form-color:not(.form-color-output)').once('webform-color').each(function () {
         var $element = $(this);
@@ -25,7 +25,7 @@
         }
         else {
           // Display color input's output to the end user.
-          var $output = $('<input class="form-color-output ' + $element.attr('class') + ' js-webform-element-mask" data-inputmask-mask="\\#######" />').inputmask();
+          var $output = $('<input class="form-color-output ' + $element.attr('class') + ' js-webform-input-mask" data-inputmask-mask="\\#######" />').inputmask();
           $output[0].value = $element[0].value;
           $element
             .after($output)
@@ -39,7 +39,7 @@
             $element[0].value = $output[0].value;
           });
         }
-      })
+      });
     }
   };
 

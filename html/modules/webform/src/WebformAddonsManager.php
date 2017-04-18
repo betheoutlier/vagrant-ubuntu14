@@ -66,6 +66,12 @@ class WebformAddonsManager implements WebformAddonsManagerInterface {
    */
   public function getCategories() {
     $categories = [];
+    $categories['config'] = [
+      'title' => $this->t('Configuration management'),
+    ];
+    $categories['element'] = [
+      'title' => $this->t('Elements'),
+    ];
     $categories['integration'] = [
       'title' => $this->t('Integration'),
     ];
@@ -98,6 +104,22 @@ class WebformAddonsManager implements WebformAddonsManagerInterface {
    */
   protected function initProjects() {
     $projects = [];
+
+    // Element: Webform Layout Container.
+    $projects['webform_layout_container'] = [
+      'title' => $this->t('Webform Layout Container'),
+      'description' => $this->t("Provides a layout container element to add to a webform, which uses old fashion floats to support legacy browsers that don't support CSS Flexbox (IE9 and IE10)."),
+      'url' => Url::fromUri('https://www.drupal.org/project/webform_layout_container'),
+      'category' => 'element',
+    ];
+
+    // Element: Webform Score.
+    $projects['webform_score'] = [
+      'title' => $this->t('Webform Score'),
+      'description' => $this->t('Lets you score an individual user\'s answers, then store and display the scores.'),
+      'url' => Url::fromUri('https://www.drupal.org/project/webform_score'),
+      'category' => 'element',
+    ];
 
     // Spam: CAPTCHA.
     $projects['captcha'] = [
@@ -132,19 +154,43 @@ class WebformAddonsManager implements WebformAddonsManagerInterface {
       'category' => 'validation',
     ];
 
-    // Integrations: MailChimp.
-    $projects['mailchimp'] = [
-      'title' => $this->t('YAML Form MailChimp'),
-      'description' => $this->t('Posts form submissions to MailChimp list.'),
-      'url' => Url::fromUri('https://www.drupal.org/project/yamlform_mailchimp'),
+    // Integrations: Webform Views Integration.
+    $projects['webform_views'] = [
+      'title' => $this->t('Webform Views Integration'),
+      'description' => $this->t('Integrates Forms 8.x-5.x and Views modules.'),
+      'url' => Url::fromUri('https://www.drupal.org/project/webform_views'),
       'category' => 'integration',
     ];
 
-    // Handler: YAML Form Queue.
-    $projects['yamlform_queue'] = [
-      'title' => $this->t('YAML Form Queue'),
+    // Integration: Webform iContact.
+    $projects['webform_icontact'] = [
+      'title' => $this->t('Webform iContact'),
+      'description' => $this->t('Send Webform submissions to iContact list.'),
+      'url' => Url::fromUri('https://www.drupal.org/sandbox/ibakayoko/2853326'),
+      'category' => 'integration',
+    ];
+
+    // Integrations: Webfomr MailChimp.
+    $projects['webform_mailchimp'] = [
+      'title' => $this->t('Webform MailChimp'),
+      'description' => $this->t('Posts form submissions to MailChimp list.'),
+      'url' => Url::fromUri('https://www.drupal.org/project/webform_mailchimp'),
+      'category' => 'integration',
+    ];
+
+    // Integrations: Webform Slack integration.
+    $projects['webform_slack'] = [
+      'title' => $this->t('Webform Slack integration'),
+      'description' => $this->t('Provides a Webform handler for posting a message to a slack channel when a submission is saved.'),
+      'url' => Url::fromUri('https://www.drupal.org/sandbox/smaz/2833275'),
+      'category' => 'integration',
+    ];
+
+    // Handler: Web Form Queue.
+    $projects['webform_queue'] = [
+      'title' => $this->t('Webform Queue'),
       'description' => $this->t('Posts form submissions into a Drupal queue.'),
-      'url' => Url::fromUri('https://www.drupal.org/project/yamlform_queue'),
+      'url' => Url::fromUri('https://www.drupal.org/project/webform_queue'),
       'category' => 'handler',
     ];
 
@@ -164,12 +210,38 @@ class WebformAddonsManager implements WebformAddonsManagerInterface {
       'category' => 'mail',
     ];
 
-    // Migrate: Token.
+    // Utility: Webform Encrypt.
+    $projects['wf_encrypt'] = [
+      'title' => $this->t('Webform Encrypt'),
+      'description' => $this->t('Provides encryption for webform elements.'),
+      'url' => Url::fromUri('https://www.drupal.org/project/webform_encrypt'),
+      'category' => 'utility',
+    ];
+
+    // Utility: IMCE.
+    $projects['imce'] = [
+      'title' => $this->t('IMCE'),
+      'description' => $this->t('IMCE is an image/file uploader and browser that supports personal directories and quota.'),
+      'url' => Url::fromUri('https://www.drupal.org/project/imce'),
+      'recommended' => TRUE,
+      'category' => 'utility',
+    ];
+
+    // Utility: Token.
     $projects['token'] = [
       'title' => $this->t('Token'),
       'description' => $this->t('Provides a user interface for the Token API and some missing core tokens.'),
       'url' => Url::fromUri('https://www.drupal.org/project/token'),
+      'recommended' => TRUE,
       'category' => 'utility',
+    ];
+
+    // Migrate: Webform Migrate.
+    $projects['webform_migrate'] = [
+      'title' => $this->t('Webform Migrate'),
+      'description' => $this->t('Provides migration routines from d6, d7 webform to d8 webform.'),
+      'url' => Url::fromUri('https://github.com/heshanlk/webform_migrate'),
+      'category' => 'migrate',
     ];
 
     // Migrate: YAML Form Migrate.
@@ -178,6 +250,30 @@ class WebformAddonsManager implements WebformAddonsManagerInterface {
       'description' => $this->t('Provides migration routines from  Drupal 6 YAML Form module to  Drupal 8 YAML Form module.'),
       'url' => Url::fromUri('https://www.drupal.org/sandbox/dippers/2819169'),
       'category' => 'migrate',
+    ];
+
+    // Config: Drush CMI tools.
+    $projects['drush_cmi_tools'] = [
+      'title' => $this->t('Drush CMI tools'),
+      'description' => $this->t('Provides advanced CMI import and export functionality for CMI workflows. Drush CMI tools should be used to protect Forms from being overwritten during a configuration import.'),
+      'url' => Url::fromUri('https://github.com/previousnext/drush_cmi_tools'),
+      'category' => 'config',
+    ];
+
+    // Configuration Ignore.
+    $projects['config_ignore'] = [
+      'title' => $this->t('Config Ignore'),
+      'description' => $this->t('Ignore certain configuration during import'),
+      'url' => Url::fromUri('https://www.drupal.org/project/config_ignore'),
+      'category' => 'config',
+    ];
+
+    // Configuration Split.
+    $projects['config_split'] = [
+      'title' => $this->t('Configuration Split'),
+      'description' => $this->t('Provides configuration filter for importing and exporting split config.'),
+      'url' => Url::fromUri('https://www.drupal.org/project/config_split'),
+      'category' => 'config',
     ];
 
     return $projects;

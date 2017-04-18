@@ -11,7 +11,7 @@ use Drupal\webform\Utility\WebformArrayHelper;
 use Drupal\webform\Utility\WebformOptionsHelper;
 
 /**
- * Base for controller for webform options.
+ * Provides a webform to set options.
  */
 class WebformOptionsForm extends EntityForm {
 
@@ -21,6 +21,9 @@ class WebformOptionsForm extends EntityForm {
   public function form(array $form, FormStateInterface $form_state) {
     /** @var \Drupal\webform\WebformOptionsInterface $webform_options */
     $webform_options = $this->entity;
+
+    /** @var \Drupal\webform\WebformOptionsStorageInterface $webform_options_storage */
+    $webform_options_storage = $this->entityTypeManager->getStorage('webform_options');
 
     $form['label'] = [
       '#type' => 'textfield',
@@ -38,6 +41,14 @@ class WebformOptionsForm extends EntityForm {
       '#required' => TRUE,
       '#disabled' => !$webform_options->isNew(),
       '#default_value' => $webform_options->id(),
+    ];
+
+    $form['category'] = [
+      '#type' => 'webform_select_other',
+      '#title' => $this->t('Category'),
+      '#options' => $webform_options_storage->getCategories(),
+      '#required' => TRUE,
+      '#default_value' => $webform_options->get('category'),
     ];
 
     // Call the isolated edit webform that can be overridden by the
@@ -128,7 +139,7 @@ class WebformOptionsForm extends EntityForm {
       '#mode' => 'yaml',
       '#title' => $this->t('Options (YAML)'),
       '#description' => $this->t('Key-value pairs MUST be specified as "safe_key: \'Some readable option\'". Use of only alphanumeric characters and underscores is recommended in keys. One option per line. Option groups can be created by using just the group name followed by indented group options.'),
-      '#default_value' => Yaml::encode($this->getOptions($form, $form_state)),
+      '#default_value' => Yaml::encode($this->getOptions()),
     ];
     $form['#attached']['library'][] = 'webform/webform.codemirror.yaml';
     return $form;
@@ -140,9 +151,9 @@ class WebformOptionsForm extends EntityForm {
    * @return array
    *   An associative array of options.
    */
-  protected function getOptions($form, $form_state) {
+  protected function getOptions() {
     /** @var \Drupal\webform\WebformOptionsInterface $webform_options */
-    $webform_options = $this->buildEntity($form, $form_state);
+    $webform_options = $this->getEntity();
 
     $options = $webform_options->getOptions();
     if (empty($options)) {

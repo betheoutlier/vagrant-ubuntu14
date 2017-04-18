@@ -5,8 +5,6 @@ namespace Drupal\mimemail\Plugin\Mail;
 use Drupal\Core\Mail\MailInterface;
 use Drupal\Core\Mail\MailFormatHelper;
 use Drupal\mimemail\Utility\MimeMailFormatHelper;
-use Drupal\Core\Mail\Plugin\Mail\PhpMail;
-use Drupal\Core\Site\Settings;
 
 /**
  * Defines the default Drupal mail backend, using PHP's native mail() function.
@@ -160,7 +158,7 @@ class MimeMail implements MailInterface {
       '#body' => $body
     ];
 
-    $body = \Drupal::service('renderer')->render($body);
+    $body = \Drupal::service('renderer')->renderRoot($body);
 
     /*foreach (module_implements('mail_post_process') as $module) {
       $function = $module . '_mail_post_process';

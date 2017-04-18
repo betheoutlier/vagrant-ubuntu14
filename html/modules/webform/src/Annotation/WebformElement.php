@@ -38,6 +38,15 @@ class WebformElement extends Plugin {
   public $api;
 
   /**
+   * The element's module dependencies.
+   *
+   * @var array
+   *
+   * @see webform_webform_element_info_alter()
+   */
+  public $dependencies = [];
+
+  /**
    * The human-readable name of the webform element.
    *
    * @var \Drupal\Core\Annotation\Translation
@@ -56,6 +65,17 @@ class WebformElement extends Plugin {
   public $category = '';
 
   /**
+   * A brief description of the webform element.
+   *
+   * This will be shown when adding or configuring this webform element.
+   *
+   * @var \Drupal\Core\Annotation\Translation
+   *
+   * @ingroup plugin_translatable
+   */
+  public $description = '';
+
+  /**
    * Flag that defines hidden element.
    *
    * @var bool
@@ -68,13 +88,6 @@ class WebformElement extends Plugin {
    * @var bool
    */
   public $multiline = FALSE;
-
-  /**
-   * Flag that defines multiple (value) element.
-   *
-   * @var bool
-   */
-  public $multiple = FALSE;
 
   /**
    * Flag that defines composite element.

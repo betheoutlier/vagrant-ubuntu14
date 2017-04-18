@@ -7,8 +7,8 @@ use Drupal\Component\Utility\Xss;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Url;
-use Drupal\Core\Utility\Token;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Psr\Log\LoggerInterface;
 
@@ -55,11 +55,25 @@ class WebformMessageManager implements WebformMessageManagerInterface {
   protected $logger;
 
   /**
+   * The renderer.
+   *
+   * @var \Drupal\Core\Render\RendererInterface
+   */
+  protected $renderer;
+
+  /**
    * Webform request handler.
    *
    * @var \Drupal\webform\WebformRequestInterface
    */
   protected $requestHandler;
+
+  /**
+   * The token manager.
+   *
+   * @var \Drupal\webform\WebformTranslationManagerInterface
+   */
+  protected $tokenManager;
 
   /**
    * A webform.
@@ -91,20 +105,23 @@ class WebformMessageManager implements WebformMessageManagerInterface {
    *   The configuration object factory.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity manager.
-   * @param \Drupal\Core\Utility\Token $token
-   *   The token service.
    * @param \Psr\Log\LoggerInterface $logger
    *   A logger instance.
+   * @param \Drupal\Core\Render\RendererInterface $renderer
+   *   The renderer.
    * @param \Drupal\webform\WebformRequestInterface $request_handler
    *   The webform request handler.
+   * @param \Drupal\webform\WebformTokenManagerInterface $token_manager
+   *   The token manager.
    */
-  public function __construct(AccountInterface $current_user, ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, Token $token, LoggerInterface $logger, WebformRequestInterface $request_handler) {
+  public function __construct(AccountInterface $current_user, ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, LoggerInterface $logger, RendererInterface $renderer, WebformRequestInterface $request_handler, WebformTokenManagerInterface $token_manager) {
     $this->currentUser = $current_user;
     $this->configFactory = $config_factory;
     $this->entityStorage = $entity_type_manager->getStorage('webform_submission');
-    $this->token = $token;
     $this->logger = $logger;
+    $this->renderer = $renderer;
     $this->requestHandler = $request_handler;
+    $this->tokenManager = $token_manager;
   }
 
   /**
@@ -135,8 +152,10 @@ class WebformMessageManager implements WebformMessageManagerInterface {
    * {@inheritdoc}
    */
   public function display($key, $type = 'status') {
-    if ($build = $this->build($key)) {
-      drupal_set_message(\Drupal::service('renderer')->renderPlain($build), $type);
+    $build = $this->build($key);
+    // Do not display message via Ajax request.
+    if ($build && !$this->requestHandler->isAjax()) {
+      drupal_set_message($this->renderer->renderPlain($build), $type);
       return TRUE;
     }
     else {
@@ -164,13 +183,14 @@ class WebformMessageManager implements WebformMessageManagerInterface {
    */
   public function get($key) {
     $webform_settings = ($this->webform) ? $this->webform->getSettings() : [];
+    $entity = $this->webformSubmission ?: $this->webform;
     if (!empty($webform_settings[$key])) {
-      return $this->replaceTokens($webform_settings[$key]);
+      return $this->tokenManager->replace($webform_settings[$key], $entity);
     }
 
     $default_settings = $this->configFactory->get('webform.settings')->get('settings');
     if (!empty($default_settings['default_' . $key])) {
-      return $this->replaceTokens($default_settings['default_' . $key]);
+      return $this->tokenManager->replace($default_settings['default_' . $key], $entity);
     }
 
     $webform = $this->webform;
@@ -211,10 +231,10 @@ class WebformMessageManager implements WebformMessageManagerInterface {
       case WebformMessageManagerInterface::SUBMISSION_UPDATED:
         return $this->t('Submission updated in %form.', $t_args);
 
-      case WebformMessageManagerInterface::SUBMISSION_TEST;
+      case WebformMessageManagerInterface::SUBMISSION_TEST:
         return $this->t("The below webform has been prepopulated with custom/random test data. When submitted, this information <strong>will still be saved</strong> and/or <strong>sent to designated recipients</strong>.", $t_args);
 
-      case WebformMessageManagerInterface::TEMPLATE_PREVIEW;
+      case WebformMessageManagerInterface::TEMPLATE_PREVIEW:
         return $this->t('You are previewing the below template, which can be used to <a href=":duplicate_href">create a new webform</a>. <strong>Submitted data will be ignored</strong>.', $t_args);
 
       default:
@@ -243,30 +263,6 @@ class WebformMessageManager implements WebformMessageManagerInterface {
     }
 
     $this->logger->$type($message, $context);
-  }
-
-  /**
-   * Replace tokens in text.
-   *
-   * @param string $text
-   *   A string of text that main contain tokens.
-   *
-   * @return string
-   *   Text will tokens replaced.
-   */
-  protected function replaceTokens($text) {
-    // Most strings won't contain tokens so lets check and return ASAP.
-    if (!is_string($text) || strpos($text, '[') === FALSE) {
-      return $text;
-    }
-
-    $token_data = [
-      'webform' => $this->webform,
-      'webform-submission' => $this->webformSubmission,
-    ];
-    $token_options = ['clear' => TRUE];
-
-    return $this->token->replace($text, $token_data, $token_options);
   }
 
 }

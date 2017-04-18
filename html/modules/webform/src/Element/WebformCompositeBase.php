@@ -30,9 +30,31 @@ abstract class WebformCompositeBase extends FormElement {
       ],
       '#theme' => str_replace('webform_', 'webform_composite_', $this->getPluginId()),
       '#theme_wrappers' => ['container'],
+      '#title_display' => 'invisible',
       '#required' => FALSE,
       '#flexbox' => TRUE,
     ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function valueCallback(&$element, $input, FormStateInterface $form_state) {
+    $composite_elements = static::getCompositeElements();
+    $default_value = [];
+    foreach ($composite_elements as $composite_key => $composite_element) {
+      if (isset($composite_element['#type']) && $composite_element['#type'] != 'label') {
+        $default_value[$composite_key] = '';
+      }
+    }
+
+    if ($input === FALSE) {
+      if (empty($element['#default_value']) || !is_array($element['#default_value'])) {
+        $element['#default_value'] = [];
+      }
+      return $element['#default_value'] + $default_value;
+    }
+    return (is_array($input)) ? $input + $default_value : $default_value;
   }
 
   /**
@@ -103,6 +125,19 @@ abstract class WebformCompositeBase extends FormElement {
       // Handle #type specific customizations.
       if (isset($composite_element['#type'])) {
         switch ($composite_element['#type']) {
+          case 'tel':
+            // Add international phone library.
+            // Add internation library and classes.
+            if (!empty($composite_element['#international'])) {
+              $composite_element['#attached']['library'][] = 'webform/webform.element.telephone';
+              $composite_element['#attributes']['class'][] = 'js-webform-telephone-international';
+              $composite_element['#attributes']['class'][] = 'webform-webform-telephone-international';
+              if (!empty($composite_element['#international_initial_country'])) {
+                $composite_element['#attributes']['data-webform-telephone-international-initial-country'] = $composite_element['#international_initial_country'];
+              }
+            }
+            break;
+
           case 'select':
           case 'webform_select_other':
             // Always include an empty option, even if the composite element
@@ -130,27 +165,6 @@ abstract class WebformCompositeBase extends FormElement {
     }
 
     return $element;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function valueCallback(&$element, $input, FormStateInterface $form_state) {
-    $composite_elements = static::getCompositeElements();
-    $default_value = [];
-    foreach ($composite_elements as $composite_key => $composite_element) {
-      if (isset($composite_element['#type']) && $composite_element['#type'] != 'label') {
-        $default_value[$composite_key] = '';
-      }
-    }
-
-    if ($input === FALSE) {
-      if (empty($element['#default_value']) || !is_array($element['#default_value'])) {
-        $element['#default_value'] = [];
-      }
-      return $element['#default_value'] + $default_value;
-    }
-    return $input + $default_value;
   }
 
   /**

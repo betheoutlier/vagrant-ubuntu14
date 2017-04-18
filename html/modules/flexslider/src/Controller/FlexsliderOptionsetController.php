@@ -1,10 +1,4 @@
 <?php
-/**
- * @file
- * Definition of Drupal\flexslider\Controller\FlexsliderOptionsetController.
- *
- * @author Agnes Chisholm <amaria@66428.no-reply.drupal.org>
- */
 
 namespace Drupal\flexslider\Controller;
 
@@ -28,7 +22,7 @@ class FlexsliderOptionsetController extends ControllerBase {
    */
   public function enable(Flexslider $flexslider) {
     $flexslider->enable()->save();
-    return new RedirectResponse($flexslider->url('collection', array('absolute' => TRUE)));
+    return new RedirectResponse($flexslider->url('collection', ['absolute' => TRUE]));
   }
 
   /**
@@ -42,7 +36,7 @@ class FlexsliderOptionsetController extends ControllerBase {
    */
   public function disable(Flexslider $flexslider) {
     $flexslider->disable()->save();
-    return new RedirectResponse($flexslider->url('collection', array('absolute' => TRUE)));
+    return new RedirectResponse($flexslider->url('collection', ['absolute' => TRUE]));
   }
 
 }

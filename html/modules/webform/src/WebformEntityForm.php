@@ -4,7 +4,12 @@ namespace Drupal\webform;
 
 use Drupal\Core\Entity\BundleEntityFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
+use Drupal\Core\Render\ElementInfoManagerInterface;
 use Drupal\Core\Render\RendererInterface;
+use Drupal\Core\Serialization\Yaml;
+use Drupal\Core\Url;
+use Drupal\webform\Utility\WebformYaml;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -22,6 +27,13 @@ class WebformEntityForm extends BundleEntityFormBase {
   protected $renderer;
 
   /**
+   * Element info manager.
+   *
+   * @var \Drupal\Core\Render\ElementInfoManagerInterface
+   */
+  protected $elementInfo;
+
+  /**
    * Webform element manager.
    *
    * @var \Drupal\webform\WebformElementManagerInterface
@@ -36,19 +48,33 @@ class WebformEntityForm extends BundleEntityFormBase {
   protected $elementsValidator;
 
   /**
-   * Constructs a new WebformUiElementFormBase.
+   * The token manager.
+   *
+   * @var \Drupal\webform\WebformTranslationManagerInterface
+   */
+  protected $tokenManager;
+
+  /**
+   * Constructs a WebformEntityForm.
    *
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer.
+   * @param \Drupal\Core\Render\ElementInfoManagerInterface $element_info
+   *   The element manager.
    * @param \Drupal\webform\WebformElementManagerInterface $element_manager
    *   The webform element manager.
    * @param \Drupal\webform\WebformEntityElementsValidator $elements_validator
    *   Webform element validator.
+   * @param \Drupal\webform\WebformTokenManagerInterface $token_manager
+   *   The token manager.
    */
-  public function __construct(RendererInterface $renderer, WebformElementManagerInterface $element_manager, WebformEntityElementsValidator $elements_validator) {
+  public function __construct(RendererInterface $renderer, ElementInfoManagerInterface $element_info, WebformElementManagerInterface $element_manager, WebformEntityElementsValidator $elements_validator, WebformTokenManagerInterface $token_manager) {
     $this->renderer = $renderer;
+    $this->elementInfo = $element_info;
     $this->elementManager = $element_manager;
     $this->elementsValidator = $elements_validator;
+    $this->tokenManager = $token_manager;
+
   }
 
   /**
@@ -57,8 +83,10 @@ class WebformEntityForm extends BundleEntityFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('renderer'),
+      $container->get('plugin.manager.element_info'),
       $container->get('plugin.manager.webform.element'),
-      $container->get('webform.elements_validator')
+      $container->get('webform.elements_validator'),
+      $container->get('webform.token_manager')
     );
   }
 
@@ -93,7 +121,7 @@ class WebformEntityForm extends BundleEntityFormBase {
 
     $form = parent::buildForm($form, $form_state);
 
-    return $form;
+    return $this->buildFormDialog($form, $form_state);
   }
 
   /**
@@ -179,20 +207,27 @@ class WebformEntityForm extends BundleEntityFormBase {
       '#mode' => 'yaml',
       '#title' => $this->t('Elements (YAML)'),
       '#description' => $this->t('Enter a <a href=":form_api_href">Form API (FAPI)</a> and/or a <a href=":render_api_href">Render Array</a> as <a href=":yaml_href">YAML</a>.', $t_args) . '<br/>' .
-        '<em>' . $this->t('Please note that comments are not supported and will be removed.') . '</em>',
-      '#default_value' => $webform->get('elements') ,
+      '<em>' . $this->t('Please note that comments are not supported and will be removed.') . '</em>',
+      '#default_value' => $this->getElementsWithoutWebformTypePrefix($webform->get('elements')),
       '#required' => TRUE,
+      '#element_validate' => ['::validateElementsYaml'],
     ];
-    if ($this->moduleHandler->moduleExists('token')) {
-      $form['token_tree_link'] = [
-        '#theme' => 'token_tree_link',
-        '#token_types' => ['webform'],
-        '#click_insert' => FALSE,
-        '#dialog' => TRUE,
-      ];
-    }
+    $form['token_tree_link'] = $this->tokenManager->buildTreeLink();
 
     return $form;
+  }
+
+  /**
+   * Element validate callback: Add 'webform_' #type prefix to elements.
+   */
+  public function validateElementsYaml(array &$element, FormStateInterface $form_state) {
+    if ($form_state->getErrors()) {
+      return;
+    }
+
+    $elements = $form_state->getValue('elements');
+    $elements = $this->getElementsWithWebformTypePrefix($elements);
+    $form_state->setValueForElement($element, $elements);
   }
 
   /**
@@ -213,6 +248,21 @@ class WebformEntityForm extends BundleEntityFormBase {
   /**
    * {@inheritdoc}
    */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    parent::submitForm($form, $form_state);
+    $form_state->setRedirectUrl($this->getRedirectUrl());
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRedirectUrl() {
+    return Url::fromRoute('entity.webform.edit_form', ['webform' => $this->getEntity()->id()]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function save(array $form, FormStateInterface $form_state) {
     /** @var \Drupal\webform\WebformInterface $webform */
     $webform = $this->getEntity();
@@ -228,8 +278,84 @@ class WebformEntityForm extends BundleEntityFormBase {
       $this->logger('webform')->notice('Webform @label elements saved.', ['@label' => $webform->label()]);
       drupal_set_message($this->t('Webform %label elements saved.', ['%label' => $webform->label()]));
     }
+  }
 
-    $form_state->setRedirect('entity.webform.edit_form', ['webform' => $webform->id()]);
+  /****************************************************************************/
+  // Webform type prefix add and remove methods.
+  /****************************************************************************/
+
+  /**
+   * Get elements without 'webform_' #type prefix.
+   *
+   * @return string
+   *   Elements (YAML) without 'webform_' #type prefix.
+   */
+  protected function getElementsWithoutWebformTypePrefix($value) {
+    $elements = Yaml::decode($value);
+    if (!is_array($elements)) {
+      return $value;
+    }
+
+    $this->removeWebformTypePrefixRecursive($elements);
+    return WebformYaml::tidy(Yaml::encode($elements));
+  }
+
+  /**
+   * Remove 'webform_' prefix from #type.
+   *
+   * @param array $element
+   *   A form element.
+   */
+  protected function removeWebformTypePrefixRecursive(array &$element) {
+    if (isset($element['#type']) && strpos($element['#type'], 'webform_') === 0 && $this->elementManager->hasDefinition($element['#type'])) {
+      $type = str_replace('webform_', '', $element['#type']);
+      if (!$this->elementInfo->hasDefinition($type) && !$this->elementManager->hasDefinition($type)) {
+        $element['#type'] = $type;
+      }
+    }
+
+    foreach (Element::children($element) as $key) {
+      if (is_array($element[$key])) {
+        $this->removeWebformTypePrefixRecursive($element[$key]);
+      }
+    }
+  }
+
+  /**
+   * Get elements with 'webform_' #type prefix.
+   *
+   * @return string
+   *   Elements (YAML) with 'webform_' #type prefix.
+   */
+  protected function getElementsWithWebformTypePrefix($value) {
+    $elements = Yaml::decode($value);
+    if (!is_array($elements)) {
+      return $value;
+    }
+
+    $this->addWebformTypePrefixRecursive($elements);
+    return WebformYaml::tidy(Yaml::encode($elements));
+  }
+
+  /**
+   * Remove 'webform_' prefix from #type.
+   *
+   * @param array $element
+   *   A form element.
+   */
+  protected function addWebformTypePrefixRecursive(array &$element) {
+    if (isset($element['#type']) && !$this->elementInfo->hasDefinition($element['#type'])) {
+      $type = 'webform_' . $element['#type'];
+      if ($this->elementManager->hasDefinition($type)) {
+        $element['#type'] = $type;
+      }
+    }
+
+    foreach (Element::children($element) as $key) {
+      if (is_array($element[$key])) {
+        $this->addWebformTypePrefixRecursive($element[$key]);
+      }
+    }
   }
 
 }

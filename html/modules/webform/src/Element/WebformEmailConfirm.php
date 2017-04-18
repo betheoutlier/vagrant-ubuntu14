@@ -28,11 +28,12 @@ class WebformEmailConfirm extends FormElement {
       '#input' => TRUE,
       '#size' => 60,
       '#process' => [
-        [$class, 'processEmailConfirm'],
+        [$class, 'processWebformEmailConfirm'],
       ],
       '#pre_render' => [
         [$class, 'preRenderCompositeFormElement'],
       ],
+      '#element_validate' => [[$class, 'validateWebformEmailConfirm']],
       '#theme_wrappers' => ['container'],
       '#required' => FALSE,
     ];
@@ -46,16 +47,20 @@ class WebformEmailConfirm extends FormElement {
       if (!isset($element['#default_value'])) {
         $element['#default_value'] = '';
       }
-      $element['mail_2'] = $element['mail_1'] = $element['#default_value'];
-      return $element;
+      return [
+        'mail_1' => $element['#default_value'],
+        'mail_2' => $element['#default_value'],
+      ];
     }
-    return NULL;
+    else {
+      return $input;
+    }
   }
 
   /**
    * Expand an email confirm field into two HTML5 email elements.
    */
-  public static function processEmailConfirm(&$element, FormStateInterface $form_state, &$complete_form) {
+  public static function processWebformEmailConfirm(&$element, FormStateInterface $form_state, &$complete_form) {
     $element['#tree'] = TRUE;
 
     // Get shared properties.
@@ -91,22 +96,21 @@ class WebformEmailConfirm extends FormElement {
     $element['mail_2']['#attributes']['class'][] = 'webform-email-confirm';
     $element['mail_2']['#value'] = empty($element['#value']) ? NULL : $element['#value']['mail_2'];
 
-    // Remove properties that are being applied to the sub elements.
+    // Don't require the main element.
     $element['#required'] = FALSE;
+
+    // Remove properties that are being applied to the sub elements.
     unset($element['#title']);
     unset($element['#description']);
     unset($element['#maxlength']);
-    unset($element['#atributes']);
-
-    $element['#element_validate'] = [[get_called_class(), 'validateEmailConfirm']];
-
+    unset($element['#attributes']);
     return $element;
   }
 
   /**
    * Validates an email confirm element.
    */
-  public static function validateEmailConfirm(&$element, FormStateInterface $form_state, &$complete_form) {
+  public static function validateWebformEmailConfirm(&$element, FormStateInterface $form_state, &$complete_form) {
 
     $mail_1 = trim($element['mail_1']['#value']);
     $mail_2 = trim($element['mail_2']['#value']);
@@ -139,6 +143,12 @@ class WebformEmailConfirm extends FormElement {
           $form_state->setError($element, t('@name cannot be longer than %max characters but is currently %length characters long.', $t_args));
         }
       }
+    }
+
+    // Set #title for other validation callbacks.
+    // @see \Drupal\webform\WebformElementBase::validateUnique
+    if (isset($element['mail_1']['#title'])) {
+      $element['#title'] = $element['mail_1']['#title'];
     }
 
     // Email field must be converted from a two-element array into a single

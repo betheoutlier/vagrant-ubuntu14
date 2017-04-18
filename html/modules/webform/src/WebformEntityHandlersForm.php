@@ -8,7 +8,7 @@ use Drupal\Core\Url;
 use Drupal\webform\Utility\WebformDialogHelper;
 
 /**
- * Controller for webform handlers.
+ * Provides a webform to manage submission handlers.
  */
 class WebformEntityHandlersForm extends EntityForm {
 
@@ -77,25 +77,36 @@ class WebformEntityHandlersForm extends EntityForm {
         ],
       ];
 
+      $operations = [];
+      $operations['edit'] = [
+        'title' => $this->t('Edit'),
+        'url' => Url::fromRoute('entity.webform.handler.edit_form', [
+          'webform' => $this->entity->id(),
+          'webform_handler' => $key,
+        ]),
+        'attributes' => WebformDialogHelper::getModalDialogAttributes(800),
+      ];
+      if ($handler->cardinality() === WebformHandlerInterface::CARDINALITY_UNLIMITED) {
+        $operations['duplicate'] = [
+          'title' => $this->t('Duplicate'),
+          'url' => Url::fromRoute('entity.webform.handler.duplicate_form', [
+            'webform' => $this->entity->id(),
+            'webform_handler' => $key,
+          ]),
+          'attributes' => WebformDialogHelper::getModalDialogAttributes(800),
+        ];
+      }
+      $operations['delete'] = [
+        'title' => $this->t('Delete'),
+        'url' => Url::fromRoute('entity.webform.handler.delete_form', [
+          'webform' => $this->entity->id(),
+          'webform_handler' => $key,
+        ]),
+        'attributes' => WebformDialogHelper::getModalDialogAttributes(700),
+      ];
       $rows[$key]['operations'] = [
         '#type' => 'operations',
-        '#links' => [
-          'edit' => [
-            'title' => $this->t('Edit'),
-            'url' => Url::fromRoute('entity.webform.handler.edit_form', [
-              'webform' => $this->entity->id(),
-              'webform_handler' => $key,
-            ]),
-            'attributes' => WebformDialogHelper::getModalDialogAttributes(800),
-          ],
-          'delete' => [
-            'title' => $this->t('Delete'),
-            'url' => Url::fromRoute('entity.webform.handler.delete_form', [
-              'webform' => $this->entity->id(),
-              'webform_handler' => $key,
-            ]),
-          ],
-        ],
+        '#links' => $operations,
       ];
     }
 
@@ -138,13 +149,8 @@ class WebformEntityHandlersForm extends EntityForm {
       '#empty' => $this->t('There are currently no handlers setup for this webform.'),
     ] + $rows;
 
-    $form['#attached']['library'][] = 'webform/webform.admin';
-
-    // Must preload CKEditor and CodeMirror library so that the
-    // window.dialog:aftercreate trigger is set before any dialogs are opened.
-    // @see js/webform.element.codemirror.js
-    $form['#attached']['library'][] = 'webform/webform.element.codemirror.yaml';
-    $form['#attached']['library'][] = 'webform/webform.element.html_editor';
+    // Must preload libraries required by (modal) dialogs.
+    WebformDialogHelper::attachLibraries($form);
 
     return parent::form($form, $form_state);
   }

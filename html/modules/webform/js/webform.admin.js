@@ -12,7 +12,7 @@
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormFilterAutocomplete = {
+  Drupal.behaviors.webformFilterAutocomplete = {
     attach: function (context) {
       $('.webform-filter-form input.form-autocomplete', context).once('webform-autocomplete')
         .each(function () {
@@ -24,7 +24,7 @@
 
           // From: http://stackoverflow.com/questions/5366068/jquery-ui-autocomplete-submit-onclick-result
           $(this).bind('autocompleteselect', function (event, ui) {
-            if(ui.item){
+            if (ui.item) {
               $(this).val(ui.item.value);
               this.form.submit();
             }
@@ -38,12 +38,12 @@
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormTableRowHref = {
+  Drupal.behaviors.webformTableRowHref = {
     attach: function (context) {
       // Only attach the click event handler to the entire table and determine
       // which row triggers the event.
       $('.webform-results__table', context).once('webform-results-table').click(function (event) {
-        if (event.target.tagName == 'A' || event.target.tagName == 'BUTTON') {
+        if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON') {
           return true;
         }
 

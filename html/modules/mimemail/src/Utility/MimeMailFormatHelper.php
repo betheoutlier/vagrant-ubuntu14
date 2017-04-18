@@ -2,9 +2,7 @@
 
 namespace Drupal\mimemail\Utility;
 
-use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Unicode;
-use Drupal\Component\Utility\Xss;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\Mail\MailFormatHelper;
 use Drupal\Core\Url;
@@ -514,7 +512,7 @@ class MimeMailFormatHelper {
           $value = wordwrap($value, 50, "$crlf ", FALSE);
         }
       }
-      $header .= $key . ":" . $value . $crlf;
+      $header .= $key . ": " . $value . $crlf;
     }
     return trim($header);
   }

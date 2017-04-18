@@ -2,39 +2,24 @@
 
 namespace Drupal\webform\Tests;
 
-use Drupal\simpletest\WebTestBase;
+use Drupal\Core\Serialization\Yaml;
+use Drupal\webform\Entity\Webform;
 use Drupal\webform\Entity\WebformSubmission;
+use Drupal\webform\WebformInterface;
 
 /**
  * Tests for webform storage tests.
  *
  * @group Webform
  */
-class WebformSubmissionStorageTest extends WebTestBase {
-
-  use WebformTestTrait;
+class WebformSubmissionStorageTest extends WebformTestBase {
 
   /**
    * Modules to enable.
    *
    * @var array
    */
-  public static $modules = ['system', 'user', 'webform'];
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setUp() {
-    parent::setUp();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function tearDown() {
-    $this->purgeSubmissions();
-    parent::tearDown();
-  }
+  protected static $modules = ['webform'];
 
   /**
    * Test webform submission storage.
@@ -43,7 +28,16 @@ class WebformSubmissionStorageTest extends WebTestBase {
     /** @var \Drupal\webform\WebformSubmissionStorageInterface $storage */
     $storage = \Drupal::entityTypeManager()->getStorage('webform_submission');
 
-    $webform = $this->createWebform();
+    // Create new webform.
+    $id = $this->randomMachineName(8);
+    $webform = Webform::create([
+      'langcode' => 'en',
+      'status' => WebformInterface::STATUS_OPEN,
+      'id' => $id,
+      'title' => $id,
+      'elements' => Yaml::encode(['test' => ['#markup' => 'test']]),
+    ]);
+    $webform->save();
 
     // Create 3 submissions for user1.
     $user1 = $this->drupalCreateUser();
@@ -86,7 +80,7 @@ class WebformSubmissionStorageTest extends WebTestBase {
     $this->drupalLogout();
 
     // Enable the saving of drafts.
-    $webform->setSetting('draft', TRUE)->save();
+    $webform->setSetting('draft', WebformInterface::DRAFT_ENABLED_AUTHENTICATED)->save();
 
     // Create drafts for user1 and user2.
     $this->drupalLogin($user1);

@@ -35,7 +35,7 @@ class WebformHtmlEditor extends Textarea {
    * @return array
    *   The $element with prepared variables ready for input.html.twig.
    */
-  public static function preRenderWebformHtmlEditor($element) {
+  public static function preRenderWebformHtmlEditor(array $element) {
     if (\Drupal::config('webform.settings')->get('ui.html_editor_disabled')) {
       $element['#mode'] = 'html';
       $element = WebformCodeMirror::preRenderWebformCodeMirror($element);
@@ -43,6 +43,11 @@ class WebformHtmlEditor extends Textarea {
     else {
       $element['#attached']['library'][] = 'webform/webform.element.html_editor';
       $element['#attached']['drupalSettings']['webform']['html_editor']['allowedContent'] = self::getAllowedContent();
+
+      if (\Drupal::moduleHandler()->moduleExists('imce') && \Drupal\imce\Imce::access()) {
+        $element['#attached']['library'][] = 'imce/drupal.imce.ckeditor';
+        $element['#attached']['drupalSettings']['webform']['html_editor']['ImceImageIcon'] = file_create_url(drupal_get_path('module', 'imce') . '/js/plugins/ckeditor/icons/imceimage.png');
+      }
     }
     return $element;
   }

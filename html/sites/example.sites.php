@@ -53,4 +53,3 @@
  * @see \Drupal\Core\DrupalKernel::getSitePath()
  * @see https://www.drupal.org/documentation/install/multi-site
  */
- $sites['local.nexus8.com'] = 'www.nexus8.com';

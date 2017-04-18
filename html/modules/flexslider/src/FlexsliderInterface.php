@@ -1,12 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\flexslider\FlexsliderInterface.
- *
- * @author Agnes Chisholm <amaria@66428.no-reply.drupal.org>
- */
-
 namespace Drupal\flexslider;
 
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
@@ -15,6 +8,7 @@ use Drupal\Core\Config\Entity\ConfigEntityInterface;
  * Provides an interface for defining Flexslider optionset entities.
  */
 interface FlexsliderInterface extends ConfigEntityInterface {
+
   /**
    * Returns the array of flexslider library options.
    *
@@ -43,8 +37,8 @@ interface FlexsliderInterface extends ConfigEntityInterface {
    * Sets the flexslider library options array.
    *
    * @param array $options
-   *    New/updated array of options.
+   *   New/updated array of options.
    */
-  public function setOptions($options);
+  public function setOptions(array $options);
 
 }

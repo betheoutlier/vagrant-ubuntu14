@@ -44,7 +44,7 @@ class WebformSubmissionDeleteForm extends ContentEntityDeleteForm {
   protected $requestHandler;
 
   /**
-   * Constructs a new WebformSubmissionDeleteForm object.
+   * Constructs a WebformSubmissionDeleteForm object.
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager.
@@ -93,7 +93,8 @@ class WebformSubmissionDeleteForm extends ContentEntityDeleteForm {
    * {@inheritdoc}
    */
   public function getCancelUrl() {
-    $route_name = $this->requestHandler->getRouteName($this->webform, $this->sourceEntity, 'webform.results_submissions');
+    $base_route_name = (strpos(\Drupal::routeMatch()->getRouteName(), 'webform.user.submission.delete') !== FALSE) ? 'webform.user.submissions' : 'webform.results_submissions';
+    $route_name = $this->requestHandler->getRouteName($this->webform, $this->sourceEntity, $base_route_name);
     $route_parameters = $this->requestHandler->getRouteParameters($this->webform, $this->sourceEntity);
     return new Url($route_name, $route_parameters);
   }

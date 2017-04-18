@@ -11,32 +11,31 @@ use Drupal\webform\WebformElementBase;
  *   id = "email",
  *   api = "https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Render!Element!Email.php/class/Email",
  *   label = @Translation("Email"),
+ *   description = @Translation("Provides a form element for entering an email address."),
  *   category = @Translation("Advanced elements"),
  * )
  */
-class Email extends WebformElementBase {
+class Email extends TextBase {
 
   /**
    * {@inheritdoc}
    */
   public function getDefaultProperties() {
     return parent::getDefaultProperties() + [
-      // Form validation.
-      'size' => '',
-      'maxlength' => '',
-      'placeholder' => '',
+      'multiple' => FALSE,
+      'multiple__header_label' => '',
     ];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function formatHtml(array &$element, $value, array $options = []) {
+  public function formatHtmlItem(array $element, $value, array $options = []) {
     if (empty($value)) {
       return '';
     }
 
-    $format = $this->getFormat($element);
+    $format = $this->getItemFormat($element);
     switch ($format) {
       case 'link':
         return [
@@ -46,22 +45,22 @@ class Email extends WebformElementBase {
         ];
 
       default:
-        return parent::formatHtml($element, $value, $options);
+        return parent::formatHtmlItem($element, $value, $options);
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getDefaultFormat() {
+  public function getItemDefaultFormat() {
     return 'link';
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getFormats() {
-    return parent::getFormats() + [
+  public function getItemFormats() {
+    return parent::getItemFormats() + [
       'link' => $this->t('Link'),
     ];
   }

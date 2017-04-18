@@ -7,7 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Base for controller for webform third party settings.
+ * Provides a webform to configure third party settings.
  */
 class WebformEntityThirdPartySettingsForm extends EntityForm {
 
@@ -19,7 +19,7 @@ class WebformEntityThirdPartySettingsForm extends EntityForm {
   protected $settingsManager;
 
   /**
-   * Constructs a new WebformEntityThirdPartySettingsForm.
+   * Constructs a WebformEntityThirdPartySettingsForm.
    *
    * @param \Drupal\webform\WebformThirdPartySettingsManagerInterface $settings_manager
    *   The third party settings manager.

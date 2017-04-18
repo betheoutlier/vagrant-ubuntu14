@@ -144,17 +144,17 @@ class WebformArrayHelper {
   }
 
   /**
-   * Get next or prev(ious) page key.
+   * Get next or prev(ious) array key.
    *
-   * @param $key
-   *   A page key.
+   * @param array $array
+   *   An array.
+   * @param string $key
+   *   A array key.
    * @param string $direction
-   *   The direction of the page key to retrieve
-   * @param bool $visible
-   *   If TRUE only visible pages will be returned.  Defaults to FALSE.
+   *   The direction of the  key to retrieve.
    *
    * @return string|null
-   *   The next or prev(ious) page key or NULL if no key is found.
+   *   The next or prev(ious) array key or NULL if no key is found.
    *
    * @see http://stackoverflow.com/questions/6407795/get-the-next-array-item-using-the-key-php
    */
@@ -211,6 +211,27 @@ class WebformArrayHelper {
       $unprefixed_array[$key] = $value;
     }
     return $unprefixed_array;
+  }
+
+  /**
+   * Shuffle an associative array while maintaining keys.
+   *
+   * @param array $array
+   *   An associative array.
+   *
+   * @return array
+   *   The associative array with it key/value pairs randomized.
+   *
+   * @see http://stackoverflow.com/questions/4102777/php-random-shuffle-array-maintaining-key-value
+   */
+  public static function shuffle(array $array) {
+    $keys = array_keys($array);
+    shuffle($keys);
+    $random = [];
+    foreach ($keys as $key) {
+      $random[$key] = $array[$key];
+    }
+    return $random;
   }
 
 }

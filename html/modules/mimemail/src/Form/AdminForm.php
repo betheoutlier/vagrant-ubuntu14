@@ -7,7 +7,7 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Url;
+use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\mailsystem\MailsystemManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -37,7 +37,7 @@ class AdminForm extends ConfigFormBase {
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The factory for configuration objects.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, MailsystemManager $mail_manager, ModuleHandlerInterface $module_handler, ThemeHandlerInterface $theme_handler) {
+  public function __construct(ConfigFactoryInterface $config_factory, MailManagerInterface $mail_manager, ModuleHandlerInterface $module_handler, ThemeHandlerInterface $theme_handler) {
     parent::__construct($config_factory);
     $this->mailManager = $mail_manager;
     $this->moduleHandler = $module_handler;
@@ -79,19 +79,19 @@ class AdminForm extends ConfigFormBase {
     $form = array();
     $form['mimemail']['name'] = array(
       '#type'          => 'textfield',
-      '#title'         => t('Sender name'),
+      '#title'         => $this->t('Sender name'),
       '#default_value' => $config->get('name') ? $config->get('name') : \Drupal::config('system.site')->get('name'),
       '#size'          => 60,
       '#maxlength'     => 128,
-      '#description'   => t('The name that all site emails will be from when using default engine.'),
+      '#description'   => $this->t('The name that all site emails will be from when using default engine.'),
     );
     $form['mimemail']['mail'] = array(
       '#type'          => 'textfield',
-      '#title'         => t('Sender e-mail address'),
+      '#title'         => $this->t('Sender e-mail address'),
       '#default_value' => $config->get('mail') ? $config->get('mail') : \Drupal::config('system.site')->get('mail'),
       '#size'          => 60,
       '#maxlength'     => 128,
-      '#description'   => t('The email address that all site e-mails will be from when using default engine.'),
+      '#description'   => $this->t('The email address that all site e-mails will be from when using default engine.'),
     );
 
 
@@ -103,7 +103,7 @@ class AdminForm extends ConfigFormBase {
     }
     $form['mimemail']['format'] = array(
       '#type' => 'select',
-      '#title' => t('E-mail format'),
+      '#title' => $this->t('E-mail format'),
       '#default_value' => $this->config('mimemail.settings')->get('format'),
       '#options' => $format_options,
       '#access' => count($formats) > 1,

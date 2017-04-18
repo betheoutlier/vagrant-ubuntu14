@@ -5,7 +5,7 @@
 
 (function ($, Drupal) {
 
-  "use strict";
+  'use strict';
 
   /**
    * Toggle other input (text) field.
@@ -40,8 +40,7 @@
       // Save the input's value.
       $input.data('webform-value', $input.val());
       // Empty and un-required the input.
-      $input.find('input').val('').prop('required', false);
-
+      $input.val('').prop('required', false);
     }
   }
 
@@ -50,12 +49,12 @@
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormSelectOther = {
+  Drupal.behaviors.webformSelectOther = {
     attach: function (context) {
       $(context).find('.js-webform-select-other').once('webform-select-other').each(function () {
         var $element = $(this);
 
-        var $select = $element.find('.form-type-select');
+        var $select = $element.find('select');
         var $otherOption = $element.find('option[value="_other_"]');
         var $input = $element.find('.js-webform-select-other-input');
 
@@ -75,7 +74,7 @@
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormCheckboxesOther = {
+  Drupal.behaviors.webformCheckboxesOther = {
     attach: function (context) {
       $(context).find('.js-webform-checkboxes-other').once('webform-checkboxes-other').each(function () {
         var $element = $(this);
@@ -98,7 +97,7 @@
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormRadiosOther = {
+  Drupal.behaviors.webformRadiosOther = {
     attach: function (context) {
       $(context).find('.js-webform-radios-other').once('webform-radios-other').each(function () {
         var $element = $(this);
@@ -122,7 +121,7 @@
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormButtonsOther = {
+  Drupal.behaviors.webformButtonsOther = {
     attach: function (context) {
       $(context).find('.js-webform-buttons-other').once('webform-buttons-other').each(function () {
         var $element = $(this);
@@ -136,13 +135,20 @@
 
         // Note: Initializing buttonset here so that we can set the onchange
         // event handler.
-        // @see Drupal.behaviors.yamlFormButtons
+        // @see Drupal.behaviors.webformButtons
         var $container = $(this).find('.form-radios');
         // Remove all div and classes around radios and labels.
         $container.html($container.find('input[type="radio"], label').removeClass());
         // Create buttonset and set onchange handler.
         $container.buttonset().change(function () {
           toggleOther(($(this).find(':radio:checked').val() === '_other_'), $input);
+        });
+        // Disable buttonset.
+        $container.buttonset('option', 'disabled', $container.find('input[type="radio"]:disabled').length);
+        // Turn buttonset off/on when the input is disabled/enabled.
+        // @see webform.states.js
+        $container.on('webform:disabled', function () {
+          $container.buttonset('option', 'disabled', $container.find('input[type="radio"]:disabled').length);
         });
       });
     }

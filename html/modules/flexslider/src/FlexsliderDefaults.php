@@ -1,10 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\flexslider\FlexsliderDefaults.
- *
- * @author Agnes Chisholm <amaria@66428.no-reply.drupal.org>
- */
 
 namespace Drupal\flexslider;
 

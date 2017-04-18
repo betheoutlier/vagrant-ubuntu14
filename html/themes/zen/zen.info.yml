@@ -6,8 +6,8 @@ screenshot: zen-internals/screenshot.png
 type: theme
 base theme: classy
 
-# Information added by Drupal.org packaging script on 2016-07-14
-version: '8.x-7.0-alpha14+1-dev'
+# Information added by Drupal.org packaging script on 2016-06-02
+version: '8.x-7.0-alpha14'
 core: '8.x'
 project: 'zen'
-datestamp: 1468474753
+datestamp: 1464881363

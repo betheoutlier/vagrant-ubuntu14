@@ -7,6 +7,7 @@ use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\CategorizingPluginManagerTrait;
 use Drupal\Core\Plugin\DefaultPluginManager;
+use Drupal\Core\Render\ElementInfoManagerInterface;
 
 /**
  * Provides a plugin manager for webform element plugins.
@@ -22,6 +23,13 @@ class WebformElementManager extends DefaultPluginManager implements FallbackPlug
   use CategorizingPluginManagerTrait;
 
   /**
+   * A element info manager.
+   *
+   * @var \Drupal\Core\Render\ElementInfoManagerInterface
+   */
+  protected $elementInfo;
+
+  /**
    * List of already instantiated webform element plugins.
    *
    * @var array
@@ -29,7 +37,7 @@ class WebformElementManager extends DefaultPluginManager implements FallbackPlug
   protected $instances = [];
 
   /**
-   * Constructs a new WebformElementManager.
+   * Constructs a WebformElementManager.
    *
    * @param \Traversable $namespaces
    *   An object that implements \Traversable which contains the root paths
@@ -38,14 +46,42 @@ class WebformElementManager extends DefaultPluginManager implements FallbackPlug
    *   Cache backend instance to use.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler.
+   * @param \Drupal\Core\Render\ElementInfoManagerInterface $element_info
+   *   The element info manager.
    */
-  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
+  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler, ElementInfoManagerInterface $element_info) {
     parent::__construct('Plugin/WebformElement', $namespaces, $module_handler, 'Drupal\webform\WebformElementInterface', 'Drupal\webform\Annotation\WebformElement');
+    $this->elementInfo = $element_info;
 
     $this->alterInfo('webform_element_info');
     $this->setCacheBackend($cache_backend, 'webform_element_plugins');
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function alterDefinitions(&$definitions) {
+    // Unset elements that are missing target element or dependencies.
+    foreach ($definitions as $element_key => $element_definition) {
+
+      // Check that the webform element's target element info exists.
+      if (!$this->elementInfo->getInfo($element_key)) {
+        unset($definitions[$element_key]);
+        continue;
+      }
+
+      // Check element's (module) dependencies exist.
+      foreach ($element_definition['dependencies'] as $dependency) {
+        if (!$this->moduleHandler->moduleExists($dependency)) {
+          unset($definitions[$element_key]);
+          continue;
+        }
+      }
+    }
+
+    parent::alterDefinitions($definitions);
+  }
+  
   /**
    * {@inheritdoc}
    */
@@ -111,13 +147,8 @@ class WebformElementManager extends DefaultPluginManager implements FallbackPlug
    * {@inheritdoc}
    */
   public function getElementPluginId(array $element) {
-    if (isset($element['#type'])) {
-      if ($this->hasDefinition($element['#type'])) {
-        return $element['#type'];
-      }
-      elseif ($this->hasDefinition('webform_' . $element['#type'])) {
-        return 'webform_' . $element['#type'];
-      }
+    if (isset($element['#type']) && $this->hasDefinition($element['#type'])) {
+      return $element['#type'];
     }
     elseif (isset($element['#markup'])) {
       return 'webform_markup';
@@ -155,6 +186,33 @@ class WebformElementManager extends DefaultPluginManager implements FallbackPlug
     }
 
     return $definitions;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getGroupedDefinitions(array $definitions = NULL, $label_key = 'label') {
+    /** @var \Drupal\Core\Plugin\CategorizingPluginManagerTrait|\Drupal\Component\Plugin\PluginManagerInterface $this */
+    $definitions = $this->getSortedDefinitions(isset($definitions) ? $definitions : $this->getDefinitions(), $label_key);
+
+    // Organize grouped definition with basic and advanced first and other last.
+    $basic_category = (string) $this->t('Basic elements');
+    $advanced_category = (string) $this->t('Advanced elements');
+    $other_category = (string) $this->t('Other elements');
+
+    $grouped_definitions = [
+      $basic_category => [],
+      $advanced_category => [],
+    ];
+    foreach ($definitions as $id => $definition) {
+      $grouped_definitions[(string) $definition['category']][$id] = $definition;
+    }
+    if (isset($grouped_definitions[''])) {
+      $no_category = $grouped_definitions[''];
+      unset($grouped_definitions['']);
+      $grouped_definitions += [$other_category => $no_category];
+    }
+    return $grouped_definitions;
   }
 
   /**

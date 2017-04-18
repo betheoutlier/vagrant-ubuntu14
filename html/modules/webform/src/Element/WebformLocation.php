@@ -19,6 +19,7 @@ class WebformLocation extends WebformCompositeBase {
       '#api_key' => '',
       '#hidden' => FALSE,
       '#geolocation' => FALSE,
+      '#map' => FALSE,
     ];
   }
 
@@ -81,6 +82,7 @@ class WebformLocation extends WebformCompositeBase {
         'class' => ['webform-location-geocomplete'],
       ],
     ];
+
     $elements += $attributes;
     return $elements;
   }
@@ -135,6 +137,11 @@ class WebformLocation extends WebformCompositeBase {
       $element['value']['#attributes']['data-webform-location-geolocation'] = 'data-webform-location-geolocation';
     }
 
+    // Set Map attribute.
+    if (!empty($element['#map']) && empty($element['#hidden'])) {
+      $element['value']['#attributes']['data-webform-location-map'] = 'data-webform-location-map';
+    }
+
     // Writing script tags (only once) directly into the page's output to ensure
     // that Google Maps APi script is loaded using the proper API key.
     static $google_api;
@@ -149,7 +156,7 @@ class WebformLocation extends WebformCompositeBase {
 
     $element['#attached']['library'][] = 'webform/webform.element.location';
 
-    $element['#element_validate'] = [[get_called_class(), 'validateLocation']];
+    $element['#element_validate'] = [[get_called_class(), 'validateWebformLocation']];
 
     return $element;
   }
@@ -157,7 +164,7 @@ class WebformLocation extends WebformCompositeBase {
   /**
    * Validates location.
    */
-  public static function validateLocation(&$element, FormStateInterface $form_state, &$complete_form) {
+  public static function validateWebformLocation(&$element, FormStateInterface $form_state, &$complete_form) {
     $value = $element['#value'];
 
     $has_access = (!isset($element['#access']) || $element['#access'] === TRUE);

@@ -1,10 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\flexslider_fields\Plugin\Field\FieldFormatter\FlexsliderResponsiveFormatter.
- *
- * @author Agnes Chisholm <amaria@66428.no-reply.drupal.org>
- */
 
 namespace Drupal\flexslider_fields\Plugin\Field\FieldFormatter;
 
@@ -20,8 +14,7 @@ use Drupal\responsive_image\Plugin\Field\FieldFormatter\ResponsiveImageFormatter
  *   id = "flexslider_responsive",
  *   label = @Translation("FlexSlider Responsive"),
  *   field_types = {
- *     "image",
- *     "media"
+ *     "image"
  *   }
  * )
  */
@@ -50,7 +43,7 @@ class FlexsliderResponsiveFormatter extends ResponsiveImageFormatter {
    * {@inheritdoc}
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
-    // Add the optionset setting
+    // Add the optionset setting.
     $element = $this->buildSettingsForm($this);
 
     // Add the image settings.
@@ -58,7 +51,7 @@ class FlexsliderResponsiveFormatter extends ResponsiveImageFormatter {
     // We don't need the link setting.
     $element['image_link']['#access'] = FALSE;
 
-    // Add the caption setting
+    // Add the caption setting.
     if (!empty($this->getSettings())) {
       $element += $this->captionSettings($this, $this->fieldDefinition);
     }
@@ -81,8 +74,32 @@ class FlexsliderResponsiveFormatter extends ResponsiveImageFormatter {
    * {@inheritdoc}
    */
   public static function isApplicable(FieldDefinitionInterface $field_definition) {
-    // This formatter only applies to multi-image fields
-    return parent::isApplicable($field_definition) && $field_definition->getFieldStorageDefinition()->isMultiple();
+    // This formatter only applies to multi-image fields when Responsive Image
+    // module is loaded.
+    if (\Drupal::moduleHandler()->moduleExists('responsive_image')) {
+      return parent::isApplicable($field_definition) && $field_definition->getFieldStorageDefinition()->isMultiple();
+    }
+    return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function calculateDependencies() {
+    $dependencies = parent::calculateDependencies();
+    return $dependencies + $this->getOptionsetDependencies($this);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function onDependencyRemoval(array $dependencies) {
+    $changed = parent::onDependencyRemoval($dependencies);
+
+    if ($this->optionsetDependenciesDeleted($this, $dependencies)) {
+      $changed = TRUE;
+    }
+    return $changed;
   }
 
 }

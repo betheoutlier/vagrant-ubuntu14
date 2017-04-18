@@ -233,7 +233,9 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
       'exporter' => 'delimited',
 
       'delimiter' => ',',
-      'file_name' => 'submission-[webform-submission:serial]',
+      'multiple_delimiter' => ';',
+
+      'file_name' => 'submission-[webform_submission:serial]',
 
       'header_format' => 'label',
       'header_prefix' => TRUE,
@@ -275,8 +277,9 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
   public function buildExportOptionsForm(array &$form, FormStateInterface $form_state, array $export_options = []) {
     $default_options = $this->getDefaultExportOptions();
     $export_options = NestedArray::mergeDeep($default_options, $export_options);
+    $this->setExporter($export_options);
+
     $webform = $this->getWebform();
-    $exporter = $this->setExporter($export_options);
 
     // Get exporter and build #states.
     $exporter_plugins = $this->exporterManager->getInstances($export_options);
@@ -317,6 +320,28 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
     foreach ($exporter_plugins as $plugin_id => $exporter) {
       $form['export']['format'] = $exporter->buildConfigurationForm($form['export']['format'], $form_state);
     }
+
+    // Element.
+    $form['export']['element'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Element options'),
+      '#open' => TRUE,
+      '#states' => $states_options,
+    ];
+    $form['export']['element']['multiple_delimiter'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Element multiple values delimiter'),
+      '#description' => $this->t('This is the delimiter when an element has multiple values.'),
+      '#required' => TRUE,
+      '#options' => [
+        ';' => $this->t('Semicolon (;)'),
+        ',' => $this->t('Comma (,)'),
+        '|' => $this->t('Pipe (|)'),
+        '.' => $this->t('Period (.)'),
+        ' ' => $this->t('Space ()'),
+      ],
+      '#default_value' => $export_options['multiple_delimiter'],
+    ];
 
     // Header.
     $form['export']['header'] = [
@@ -401,7 +426,7 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
     $form['export']['columns']['excluded_columns'] = [
       '#type' => 'webform_excluded_columns',
       '#description' => $this->t('The selected columns will be included in the export.'),
-      '#webform' => $webform,
+      '#webform_id' => $webform->id(),
       '#default_value' => $export_options['excluded_columns'],
     ];
 
@@ -415,6 +440,7 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
       '#type' => 'checkbox',
       '#title' => $this->t('Download export file'),
       '#description' => $this->t('If checked, the export file will be automatically download to your local machine. If unchecked, the export file will be displayed as plain text within your browser.'),
+      '#return_value' => TRUE,
       '#default_value' => $export_options['download'],
       '#access' => !$this->requiresBatch(),
       '#states' => $states_archive,
@@ -423,6 +449,7 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
       '#type' => 'checkbox',
       '#title' => $this->t('Download uploaded files'),
       '#description' => $this->t('If checked, the exported file and any submission file uploads will be download in a gzipped tar file.'),
+      '#return_value' => TRUE,
       '#access' => $webform->hasManagedFile(),
       '#states' => [
         'invisible' => [
@@ -509,19 +536,20 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
         ],
       ];
       $form['export']['download'][$key]['range_start'] = $range_element + [
-        '#title' => $this->t('From'),
-        '#default_value' => $export_options['range_start'],
-      ];
+          '#title' => $this->t('From'),
+          '#default_value' => $export_options['range_start'],
+        ];
       $form['export']['download'][$key]['range_end'] = $range_element + [
-        '#title' => $this->t('To'),
-        '#default_value' => $export_options['range_end'],
-      ];
+          '#title' => $this->t('To'),
+          '#default_value' => $export_options['range_end'],
+        ];
     }
 
     $form['export']['download']['sticky'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Starred/flagged submissions'),
       '#description' => $this->t('If checked, only starred/flagged submissions will be downloaded. If unchecked, all submissions will downloaded.'),
+      '#return_value' => TRUE,
       '#default_value' => $export_options['sticky'],
     ];
 
@@ -536,7 +564,7 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
         'completed' => $this->t('Completed submissions only'),
         'draft' => $this->t('Drafts only'),
       ],
-      '#access' => $webform->getSetting('draft'),
+      '#access' => ($webform->getSetting('draft') != WebformInterface::DRAFT_ENABLED_NONE),
     ];
   }
 
@@ -579,6 +607,11 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
     // Append format.
     if (isset($export_values['format'])) {
       $values += $export_values['format'];
+    }
+
+    // Append element.
+    if (isset($export_values['element'])) {
+      $values += $export_values['element'];
     }
 
     // Append header.
@@ -747,11 +780,11 @@ class WebformSubmissionExporter implements WebformSubmissionExporterInterface {
 
     // Filter by (completion) state.
     switch ($export_options['state']) {
-      case 'draft';
+      case 'draft':
         $query->condition('in_draft', 1);
         break;
 
-      case 'completed';
+      case 'completed':
         $query->condition('in_draft', 0);
         break;
 

@@ -108,6 +108,7 @@ class WebformTemplatesController extends ControllerBase implements ContainerInje
             'duplicate' => [
               'title' => $this->t('Select'),
               'url' => Url::fromRoute('entity.webform.duplicate_form', $route_parameters),
+              'attributes' => WebformDialogHelper::getModalDialogAttributes(700),
             ],
           ],
         ];
@@ -127,6 +128,20 @@ class WebformTemplatesController extends ControllerBase implements ContainerInje
 
     $build = [];
     $build['filter_form'] = $this->formBuilder->getForm('\Drupal\webform_templates\Form\WebformTemplatesFilterForm', $keys);
+
+    // Display info.
+    if ($total = count($rows)) {
+      $t_args = [
+        '@total' => count($rows),
+        '@results' => $this->formatPlural($total, $this->t('template'), $this->t('templates')),
+      ];
+      $build['info'] = [
+        '#markup' => $this->t('@total @results', $t_args),
+        '#prefix' => '<div>',
+        '#suffix' => '</div>',
+      ];
+    }
+
     $build['table'] = [
       '#type' => 'table',
       '#header' => $header,
@@ -137,7 +152,9 @@ class WebformTemplatesController extends ControllerBase implements ContainerInje
         'tags' => $this->webformStorage->getEntityType()->getListCacheTags(),
       ],
     ];
-    $build['#attached']['library'][] = 'webform/webform.admin';
+
+    // Must preload libraries required by (modal) dialogs.
+    WebformDialogHelper::attachLibraries($build);
 
     return $build;
   }

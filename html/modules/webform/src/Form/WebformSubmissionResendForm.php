@@ -43,7 +43,7 @@ class WebformSubmissionResendForm extends FormBase {
   protected $requestHandler;
 
   /**
-   * Constructs a new WebformResultsDeleteBaseForm object.
+   * Constructs a WebformResultsResendForm object.
    *
    * @param \Drupal\webform\WebformRequestInterface $request_handler
    *   The webform request handler.
@@ -147,7 +147,7 @@ class WebformSubmissionResendForm extends FormBase {
     // Message.
     $form['message'] = [
       '#type' => 'details',
-      '#title' => 'Message',
+      '#title' => $this->t('Message'),
       '#open' => TRUE,
       '#tree' => TRUE,
       '#prefix' => '<div id="edit-webform-message-wrapper">',
@@ -206,7 +206,7 @@ class WebformSubmissionResendForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $params = $form_state->getValue('message');
     $message_handler = $this->getMessageHandler($form_state);
-    $message_handler->sendMessage($params);
+    $message_handler->sendMessage($this->webformSubmission, $params);
 
     $t_args = [
       '%label' => $message_handler->label(),

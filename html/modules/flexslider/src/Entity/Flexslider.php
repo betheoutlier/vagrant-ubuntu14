@@ -1,12 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\flexslider\Entity\Flexslider.
- *
- * @author Agnes Chisholm <amaria@66428.no-reply.drupal.org>
- */
-
 namespace Drupal\flexslider\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
@@ -69,7 +62,7 @@ class Flexslider extends ConfigEntityBase implements FlexsliderInterface {
    *
    * @var array
    */
-  protected $options = array();
+  protected $options = [];
 
   /**
    * {@inheritdoc}
@@ -90,7 +83,7 @@ class Flexslider extends ConfigEntityBase implements FlexsliderInterface {
   /**
    * {@inheritdoc}
    */
-  public function setOptions($options) {
+  public function setOptions(array $options) {
     $this->options = $options;
   }
 
@@ -104,7 +97,7 @@ class Flexslider extends ConfigEntityBase implements FlexsliderInterface {
   /**
    * {@inheritdoc}
    */
-  public static function create(array $values = array()) {
+  public static function create(array $values = []) {
     $flexslider = parent::create($values);
     // Merge options with default options.
     $default_options = FlexsliderDefaults::defaultOptions();

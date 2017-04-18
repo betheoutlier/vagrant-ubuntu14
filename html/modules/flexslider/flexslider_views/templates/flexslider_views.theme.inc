@@ -3,8 +3,6 @@
 /**
  * @file
  * Theme functions for FlexSlider Views.
- *
- * @author Mathew Winstone <mwinstone@coldfrontlabs.ca>
  */
 
 /**
@@ -20,7 +18,7 @@
  *     - separator: A string to be placed between inline fields to keep them
  *       visually distinct.
  */
-function template_preprocess_flexslider_views_style(&$variables) {
+function template_preprocess_flexslider_views_style(array &$variables) {
   // Only run the preprocessor if it is a view.
   if (empty($variables['view'])) {
     return;
@@ -30,11 +28,12 @@ function template_preprocess_flexslider_views_style(&$variables) {
   $style = $view->style_plugin;
   $options = $style->options;
 
-  $items = array();
-  $settings = array();
+  $items = [];
+  $settings = [];
   $settings['optionset'] = $options['optionset'];
+  $settings['attributes'] = ['id' => $variables['options']['id']];
 
-  foreach ($variables['rows'] as $id => $row) {
+  foreach ($variables['rows'] as $row) {
     // Render the row into a slide.
     // @todo should use render arrays instead of actual output
     $item['slide'] = render($row);
@@ -42,12 +41,13 @@ function template_preprocess_flexslider_views_style(&$variables) {
     $items[] = $item;
   }
 
-  $content = array(
+  $content = [
     '#theme' => 'flexslider',
-    '#items' => $items,
-    '#settings' => $settings,
-    '#attributes' => array('id' => $variables['options']['id']),
-  );
+    '#flexslider' => [
+      'items' => $items,
+      'settings' => $settings,
+    ],
+  ];
 
   // Add the slide items to the variables.
   $variables['content'] = $content;

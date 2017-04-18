@@ -12,7 +12,7 @@
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormDetailsToggle = {
+  Drupal.behaviors.webformDetailsToggle = {
     attach: function (context) {
       $('.js-webform-details-toggle', context).once('webform-details-toggle').each(function () {
         var $form = $(this);
@@ -40,9 +40,9 @@
 
             // Set the saved states for all the details elements.
             // @see webform.element.details.save.js
-            if (Drupal.yamlFormDetailsSaveGetName) {
-              $form.find('details').each(function() {
-                var name = Drupal.yamlFormDetailsSaveGetName($(this));
+            if (Drupal.webformDetailsSaveGetName) {
+              $form.find('details').each(function () {
+                var name = Drupal.webformDetailsSaveGetName($(this));
                 if (name) {
                   localStorage.setItem(name, open);
                 }
@@ -61,20 +61,20 @@
   /**
    * Determine if a webform's details are all opened.
    *
-   * @param $form
+   * @param {jQuery} $form
    *   A webform.
    *
-   * @returns {boolean}
+   * @return {boolean}
    *   TRUE if a webform's details are all opened.
    */
   function isFormDetailsOpen($form) {
-    return ($form.find('details[open]').length == $form.find('details').length)
+    return ($form.find('details[open]').length === $form.find('details').length);
   }
 
   /**
    * Set a webform's details toggle state widget label.
    *
-   * @param $form
+   * @param {jQuery} $form
    *   A webform.
    */
   function setDetailsToggleLabel($form) {

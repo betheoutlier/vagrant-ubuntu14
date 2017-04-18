@@ -7,12 +7,17 @@
 
   'use strict';
 
+  // @see http://codemirror.net/doc/manual.html#config
+  Drupal.webform = Drupal.webform || {};
+  Drupal.webform.codeMirror = Drupal.webform.codeMirror || {};
+  Drupal.webform.codeMirror.options = Drupal.webform.codeMirror.options || {};
+
   /**
    * Initialize CodeMirror editor.
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormCodeMirror = {
+  Drupal.behaviors.webformCodeMirror = {
     attach: function (context) {
 
       // Webform CodeMirror editor.
@@ -27,7 +32,7 @@
         // https://github.com/marijnh/CodeMirror-old/issues/59
         $(this).removeAttr('required');
 
-        var editor = CodeMirror.fromTextArea(this, {
+        var options = $.extend({
           mode: $(this).attr('data-webform-codemirror-mode'),
           lineNumbers: true,
           viewportMargin: Infinity,
@@ -39,14 +44,16 @@
               cm.replaceSelection(spaces, 'end', '+element');
             }
           }
-        });
+        }, Drupal.webform.codeMirror.options);
+
+        var editor = CodeMirror.fromTextArea(this, options);
 
         // Now, close details.
         $details.removeAttr('open');
 
         // Issue #2764443: CodeMirror is not setting submitted value when
         // rendered within a webform UI dialog.
-        editor.on('blur', function (event){
+        editor.on('blur', function (event) {
           editor.save();
         });
 
@@ -59,7 +66,7 @@
         // Set CodeMirror to be readonly when the textarea is disabled.
         // @see webform.states.js
         $input.on('webform:disabled', function () {
-          editor.setOption("readOnly", $input.is(':disabled'));
+          editor.setOption('readOnly', $input.is(':disabled'));
         });
 
       });
@@ -79,7 +86,7 @@
     // Delay refreshing CodeMirror for 10 millisecond while the dialog is
     // still being rendered.
     // @see http://stackoverflow.com/questions/8349571/codemirror-editor-is-not-loading-content-until-clicked
-    setTimeout(function() {
+    setTimeout(function () {
       $('.CodeMirror').each(function (index, $element) {
         var $details = $(this).parents('details:not([open])');
         $details.attr('open', 'open');
@@ -91,7 +98,7 @@
   });
 
   // On state:visible refresh CodeMirror elements.
-  $(document).on('state:visible', function(event) {
+  $(document).on('state:visible', function (event) {
     var $element = $(event.target);
     if ($element.hasClass('js-webform-codemirror')) {
       $element.parent().find('.CodeMirror').each(function (index, $element) {

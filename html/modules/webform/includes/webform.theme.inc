@@ -13,7 +13,7 @@ use Drupal\Core\Template\Attribute;
 use Drupal\Component\Utility\Xss;
 use Drupal\webform\Element\WebformCodeMirror;
 use Drupal\webform\WebformMessageManagerInterface;
-use Drupal\webform\Utility\WebformTidy;
+use Drupal\webform\Utility\WebformYaml;
 use Drupal\webform\Utility\WebformDateHelper;
 use Drupal\webform\Utility\WebformDialogHelper;
 use Drupal\webform\Utility\WebformElementHelper;
@@ -29,29 +29,36 @@ use Drupal\webform\Utility\WebformElementHelper;
  *   - content: Help content.
  */
 function template_preprocess_webform_help(array &$variables) {
-  $info = $variables['info'];
+  $help_info = $variables['info'];
 
-  $variables += $info;
+  $variables += $help_info;
 
   $help = [];
-  if (is_array($info['content'])) {
-    $help['content'] = $info['content'];
+  if (is_array($help_info['content'])) {
+    $help['content'] = $help_info['content'];
   }
   else {
     $help['content'] = [
-      '#markup' => $info['content'],
+      '#markup' => $help_info['content'],
     ];
   }
 
-  if (!empty($info['youtube_id'])) {
-    $video_display = \Drupal::config('webform.settings')->get('ui.video_display');
+  // Build watch video link.
+  /** @var \Drupal\webform\WebformHelpManagerInterface $help_manager */
+  $help_manager = \Drupal::service('webform.help_manager');
+
+  // If help info load the video else this is the video info.
+  $video_info = (isset($help_info['video_id'])) ? $help_manager->getVideo($help_info['video_id']) : $help_info;
+  if (!empty($video_info['youtube_id'])) {
     $classes = ['button', 'button-action', 'button--small', 'button-webform-play'];
+
+    $video_display = \Drupal::config('webform.settings')->get('ui.video_display');
     switch ($video_display) {
-      case 'dialog';
+      case 'dialog':
         $help['link'] = [
           '#type' => 'link',
-          '#title' => 'Watch video',
-          '#url' => Url::fromRoute('webform.help', ['id' => str_replace('_', '-', $info['id'])]),
+          '#title' => t('Watch video'),
+          '#url' => Url::fromRoute('webform.help', ['id' => str_replace('_', '-', $video_info['id'])]),
           '#attributes' => WebformDialogHelper::getModalDialogAttributes(1000, $classes),
           '#prefix' => ' ',
         ];
@@ -60,12 +67,11 @@ function template_preprocess_webform_help(array &$variables) {
       case 'link':
         $help['link'] = [
           '#type' => 'link',
-          '#title' => 'Watch video',
-          '#url' => Url::fromUri('https://youtu.be/' . $info['youtube_id']),
+          '#title' => t('Watch video'),
+          '#url' => Url::fromUri('https://youtu.be/' . $video_info['youtube_id']),
           '#attributes' => ['class' => $classes],
           '#prefix' => ' ',
         ];
-
         break;
 
       case 'hidden':
@@ -162,7 +168,7 @@ function template_preprocess_webform_confirmation(array &$variables) {
   $options = ($query) ? ['query' => $query] : [];
 
   // Set back_url.
-  if ($source_entity) {
+  if ($source_entity && $source_entity->hasLinkTemplate('canonical')) {
     $variables['back_url'] = $source_entity->toUrl('canonical', $options)->toString();
   }
   elseif ($webform_submission) {
@@ -198,7 +204,7 @@ function template_preprocess_webform_submission_navigation(array &$variables) {
   // paging through submission.
   $route_name = \Drupal::routeMatch()->getRouteName();
   $route_parameters = \Drupal::routeMatch()->getRawParameters()->all();
-  $source_entity = $request_handler->getCurrentSourceEntity(['webform_submission']);
+  $source_entity = $request_handler->getCurrentSourceEntity('webform_submission');
 
   if (strpos(\Drupal::routeMatch()->getRouteName(), 'webform.user.submission') !== FALSE) {
     $account = \Drupal::currentUser();
@@ -215,6 +221,10 @@ function template_preprocess_webform_submission_navigation(array &$variables) {
   }
 
   $variables['#attached']['library'][] = 'webform/webform.navigation';
+
+  // Never cache navigation because previous and next submission will change
+  // as submissions are added and deleted.
+  $variables['#cache'] = ['max-age' => 0];
 }
 
 /**
@@ -260,7 +270,7 @@ function template_preprocess_webform_submission_information(array &$variables) {
     $variables['token_update'] = Link::fromTextAndUrl($token_url->setAbsolute(FALSE)->toString(), $token_url);
   }
 
-  if ($source_entity = $webform_submission->getSourceEntity()) {
+  if (($source_entity = $webform_submission->getSourceEntity()) && $source_entity->hasLinkTemplate('canonical')) {
     $variables['submitted_to'] = $source_entity->toLink();
   }
 
@@ -322,7 +332,7 @@ function template_preprocess_webform_submission_table(array &$variables) {
 
   $webform = $webform_submission->getWebform();
   $data = $webform_submission->getData();
-  $elements = $webform->getElementsFlattenedAndHasValue();
+  $elements = $webform->getElementsInitializedFlattenedAndHasValue();
 
   $variables['table'] = $view_builder->buildTable($elements, $data);
 }
@@ -386,9 +396,9 @@ function template_preprocess_webform_submission_yaml(array &$variables) {
   /** @var \Drupal\webform\WebformSubmissionInterface $webform_submission */
   $webform_submission = $variables['webform_submission'];
 
-  $data = $webform_submission->toArray(TRUE);
+  $data = $webform_submission->toArray(TRUE, TRUE);
   $yaml = Yaml::encode($data);
-  $yaml = WebformTidy::tidy($yaml);
+  $yaml = WebformYaml::tidy($yaml);
   $variables['yaml'] = [
     '#markup' => $yaml,
     '#allowed_tags' => Xss::getAdminTagList(),
@@ -557,6 +567,44 @@ function template_preprocess_webform_progress_bar(array &$variables) {
 }
 
 /******************************************************************************/
+// Element templates
+/******************************************************************************/
+
+/**
+ * Prepares variables for Webform message templates.
+ *
+ * Default template: webform-message.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - element: An associative array containing the properties of the element.
+ *     Properties used: #id, #attributes, #children.
+ *
+ * @see template_preprocess_container()
+ */
+function template_preprocess_webform_message(array &$variables) {
+  $variables['has_parent'] = FALSE;
+  $element = $variables['element'];
+  // Ensure #attributes is set.
+  $element += ['#attributes' => []];
+
+  // Special handling for webform elements.
+  if (isset($element['#array_parents'])) {
+    // Assign an html ID.
+    if (!isset($element['#attributes']['id'])) {
+      $element['#attributes']['id'] = $element['#id'];
+    }
+    $variables['has_parent'] = TRUE;
+  }
+
+  $variables['message'] = $element['#message'];
+  $variables['attributes'] = $element['#attributes'];
+  if (isset($element['#closed'])) {
+    $variables['closed'] = $element['#closed'];
+  }
+}
+
+/******************************************************************************/
 // Composite templates
 /******************************************************************************/
 
@@ -657,6 +705,26 @@ function template_preprocess_webform_composite_name(array &$variables) {
     }
   }
   $variables['flexbox'] = (isset($element['#flexbox'])) ? $element['#flexbox'] : FALSE;
+}
+
+/**
+ * Prepares variables for telephone composite element templates.
+ *
+ * Default template: webform-element-telephone.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - element: An associative array containing the properties of the element.
+ *     Properties used: #title, #value, #options, #description, #required,
+ *     #attributes.
+ */
+function template_preprocess_webform_composite_telephone(array &$variables) {
+  $element = $variables['element'];
+  foreach (Element::children($element) as $key) {
+    if ($element[$key]['#access']) {
+      $variables['content'][$key] = $element[$key];
+    }
+  }
 }
 
 /******************************************************************************/

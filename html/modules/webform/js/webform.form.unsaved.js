@@ -1,6 +1,6 @@
 /**
  * @file
- * Javascript behaviors for webforms.
+ * Javascript behaviors for unsaved webforms.
  */
 
 (function ($, Drupal) {
@@ -17,7 +17,7 @@
    * @prop {Drupal~behaviorAttach} attach
    *   Attaches the behavior for unsaved changes.
    */
-  Drupal.behaviors.yamlFormUnsaved = {
+  Drupal.behaviors.webformUnsaved = {
     attach: function (context) {
       // Look for the 'data-webform-unsaved' attribute which indicates that the
       // multi-step webform has unsaved data.
@@ -26,24 +26,24 @@
         unsaved = true;
       }
       else {
-        $('.js-webform-unsaved :input:not(input[type=\'submit\'])', context).once('webform-unsaved').on('change keypress', function(){
+        $('.js-webform-unsaved :input:not(input[type=\'submit\'])', context).once('webform-unsaved').on('change keypress', function () {
           unsaved = true;
         });
       }
 
-      $('.js-webform-unsaved button, .js-webform-unsaved input[type=\'submit\']', context).once('webform-unsaved').on('click', function(){
+      $('.js-webform-unsaved button, .js-webform-unsaved input[type=\'submit\']', context).once('webform-unsaved').on('click', function () {
         unsaved = false;
       });
     }
   };
 
-  $(window).on('beforeunload', function() {
+  $(window).on('beforeunload', function () {
     if (unsaved) {
       return true;
     }
   });
 
-  /*!
+  /**
    * An experimental shim to partially emulate onBeforeUnload on iOS.
    * Part of https://github.com/codedance/jquery.AreYouSure/
    *
@@ -54,13 +54,13 @@
    * Author:  chris.dance@papercut.com
    * Date:    19th May 2014
    */
-  $(function() {
+  $(function () {
     if (!navigator.userAgent.toLowerCase().match(/iphone|ipad|ipod|opera/)) {
       return;
     }
-    $('a').bind('click', function(evt) {
+    $('a').bind('click', function (evt) {
       var href = $(evt.target).closest('a').attr('href');
-      if (href !== undefined && !(href.match(/^#/) || href.trim() == '')) {
+      if (href !== undefined && !(href.match(/^#/) || href.trim() === '')) {
         if ($(window).triggerHandler('beforeunload')) {
           if (!confirm(Drupal.t('Changes you made may not be saved.') + '\n\n' + Drupal.t('Press OK to leave this page or Cancel to stay.'))) {
             return false;
@@ -73,4 +73,3 @@
   });
 
 })(jQuery, Drupal);
-

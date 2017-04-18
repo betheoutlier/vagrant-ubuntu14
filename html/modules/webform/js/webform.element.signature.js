@@ -7,12 +7,17 @@
 
   'use strict';
 
+  // @see https://github.com/szimek/signature_pad#options
+  Drupal.webform = Drupal.webform || {};
+  Drupal.webform.signaturePad = Drupal.webform.signaturePad || {};
+  Drupal.webform.signaturePad.options = Drupal.webform.signaturePad.options || {};
+
   /**
    * Initialize signature element.
    *
    * @type {Drupal~behavior}
    */
-  Drupal.behaviors.yamlFormSignature = {
+  Drupal.behaviors.webformSignature = {
     attach: function (context) {
       $(context).find('input.js-webform-signature').once('webform-signature').each(function () {
         var $input = $(this);
@@ -24,10 +29,10 @@
 
         // Set height.
         $canvas.attr('width', $wrapper.width());
-        $canvas.attr('height', $wrapper.width()/3);
+        $canvas.attr('height', $wrapper.width() / 3);
         $(window).resize(function () {
           $canvas.attr('width', $wrapper.width());
-          $canvas.attr('height', $wrapper.width()/3);
+          $canvas.attr('height', $wrapper.width() / 3);
 
           // Resizing clears the canvas so we need to reset the signature pad.
           signaturePad.clear();
@@ -38,11 +43,12 @@
         });
 
         // Initialize signature canvas.
-        var signaturePad = new SignaturePad(canvas, {
-          'onEnd': function () {
+        var options = $.extend({
+          onEnd: function () {
             $input.val(signaturePad.toDataURL());
           }
-        });
+        }, Drupal.webform.signaturePad.options);
+        var signaturePad = new SignaturePad(canvas, options);
 
         // Set value.
         if (value) {

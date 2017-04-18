@@ -8,7 +8,7 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Render\Element\FormElement;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Utility\WebformArrayHelper;
-use Drupal\webform\Utility\WebformTidy;
+use Drupal\webform\Utility\WebformYaml;
 
 /**
  * Provides a webform element to edit an element's #states.
@@ -27,7 +27,7 @@ class WebformElementStates extends FormElement {
       '#selector_options' => [],
       '#empty_states' => 3,
       '#process' => [
-        [$class, 'processStates'],
+        [$class, 'processWebformStates'],
       ],
       '#theme_wrappers' => ['form_element'],
     ];
@@ -62,7 +62,7 @@ class WebformElementStates extends FormElement {
   /**
    * Expand an email confirm field into two HTML5 email elements.
    */
-  public static function processStates(&$element, FormStateInterface $form_state, &$complete_form) {
+  public static function processWebformStates(&$element, FormStateInterface $form_state, &$complete_form) {
     // Define default #state_options and #trigger_options.
     // There are also defined by \Drupal\webform\WebformElementBase::form.
     $element += [
@@ -86,17 +86,18 @@ class WebformElementStates extends FormElement {
         'expanded' => t('Expanded'),
         'collapsed' => t('Collapsed'),
         'value' => t('Value is'),
+        '!value' => t('Value is not'),
       ],
     ];
 
     $element['#tree'] = TRUE;
 
     // Add validate callback that extracts the associative array of states.
-    $element['#element_validate'] = [[get_called_class(), 'validateStates']];
+    $element['#element_validate'] = [[get_called_class(), 'validateWebformElementStates']];
 
     // For customized #states display a CodeMirror YAML editor.
     if ($warning_message = self::isDefaultValueCustomizedFormApiStates($element)) {
-      $warning_message .= ' ' . t('Webform API #states must be manually entered.');
+      $warning_message .= ' ' . t('Form API #states must be manually entered.');
       $element['messages'] = [
         '#type' => 'webform_message',
         '#message_type' => 'warning',
@@ -105,8 +106,8 @@ class WebformElementStates extends FormElement {
       $element['states'] = [
         '#type' => 'webform_codemirror',
         '#mode' => 'yaml',
-        '#default_value' => WebformTidy::tidy(Yaml::encode($element['#default_value'])),
-        '#description' => t('Learn more about Drupal\'s <a href=":href">Webform API #states</a>.', [':href' => 'https://www.lullabot.com/articles/form-api-states']),
+        '#default_value' => WebformYaml::tidy(Yaml::encode($element['#default_value'])),
+        '#description' => t('Learn more about Drupal\'s <a href=":href">Form API #states</a>.', [':href' => 'https://www.lullabot.com/articles/form-api-states']),
       ];
       return $element;
     }
@@ -296,7 +297,10 @@ class WebformElementStates extends FormElement {
       '#default_value' => $condition['value'],
       '#states' => [
         'visible' => [
-          $trigger_selector => ['value' => 'value'],
+          [$trigger_selector => ['value' => 'value']],
+          'or',
+          [$trigger_selector => ['value' => '!value']],
+
         ],
       ],
     ];
@@ -473,7 +477,7 @@ class WebformElementStates extends FormElement {
   /**
    * Validates webform states element.
    */
-  public static function validateStates(&$element, FormStateInterface $form_state, &$complete_form) {
+  public static function validateWebformElementStates(&$element, FormStateInterface $form_state, &$complete_form) {
     if (isset($element['states']['#value']) && is_string($element['states']['#value'])) {
       $states = Yaml::decode($element['states']['#value']);
     }
@@ -493,6 +497,8 @@ class WebformElementStates extends FormElement {
    *
    * @param array $element
    *   An element.
+   * @param string $name
+   *   The name.
    *
    * @return string
    *   A unique key used to store the number of options for an element.
@@ -506,10 +512,10 @@ class WebformElementStates extends FormElement {
   /****************************************************************************/
 
   /**
-   * Convert Webform API #states to states array.
+   * Convert Form API #states to states array.
    *
    * @param array $fapi_states
-   *   An associative array containing Webform API #states.
+   *   An associative array containing Form API #states.
    *
    * @return array
    *   An associative array of states.
@@ -551,7 +557,7 @@ class WebformElementStates extends FormElement {
   }
 
   /**
-   * Convert states array to Webform API #states.
+   * Convert states array to Form API #states.
    *
    * @param array $states_array
    *   An associative array containing states.
@@ -583,14 +589,21 @@ class WebformElementStates extends FormElement {
             $trigger = $condition['trigger'];
             $value = $condition['value'] ?: TRUE;
             if ($selector && $trigger) {
-              if ($index !== 0 && $operator == 'or') {
-                $states[$state][] = $operator;
+              if ($operator == 'or') {
+                if ($index !== 0) {
+                  $states[$state][] = $operator;
+                }
+                $states[$state][] = [
+                  $selector => [
+                    $trigger => $value,
+                  ],
+                ];
               }
-              $states[$state][] = [
-                $selector => [
+              else {
+                $states[$state][$selector] = [
                   $trigger => $value,
-                ],
-              ];
+                ];
+              }
             }
           }
         }

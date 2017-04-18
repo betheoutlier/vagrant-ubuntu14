@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Theming functions for the flexslider module.
@@ -7,6 +8,7 @@
  * functions to make theming easier.
  */
 
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\flexslider\Entity\Flexslider;
 use Drupal\flexslider\FlexsliderDefaults;
@@ -19,9 +21,9 @@ use Drupal\flexslider\FlexsliderDefaults;
 function template_preprocess_flexslider(&$variables) {
 
   // Reference configuration variables.
-  $optionset = &$variables['settings']['optionset'];
-  $settings = &$variables['settings'];
-  $items = &$variables['items'];
+  $settings = &$variables['flexslider']['settings'];
+  $optionset = &$settings['optionset'];
+  $items = &$variables['flexslider']['items'];
 
   // Set the default container type.
   if (empty($settings['type'])) {
@@ -37,7 +39,7 @@ function template_preprocess_flexslider(&$variables) {
   if (is_null($optionset)) {
     // Fall back to 'default' options.
     $options = FlexsliderDefaults::defaultOptions();
-    \Drupal::logger('flexslider')->warning('Fallback to default optionset.', array());
+    \Drupal::logger('flexslider')->warning('Fallback to default optionset.', []);
   }
   else {
     $options = $optionset->getOptions();
@@ -68,25 +70,25 @@ function template_preprocess_flexslider(&$variables) {
   $attributes['class'][] = 'flexslider';
 
   // Add the optionset name as a class to the container.
-  $attributes['class'][] = 'optionset-' . Drupal\Component\Utility\Html::getClass($optionset->id());
+  $attributes['class'][] = 'optionset-' . Html::getClass($optionset->id());
 
   // Add the image style name as a class to the container.
   if (!empty($settings['image_style'])) {
-    $attributes['class'][] = 'imagestyle-' . Drupal\Component\Utility\Html::getClass($settings['image_style']);
+    $attributes['class'][] = 'imagestyle-' . Html::getClass($settings['image_style']);
   }
 
   // Pass attributes to twig.
   $variables['attributes'] = $attributes;
 
   // Add the list render array.
-  $variables['content']['list'] = array(
+  $variables['content']['list'] = [
     '#theme' => 'flexslider_list',
     '#items' => $items,
     '#settings' => $settings,
-  );
+  ];
 
   // Finally, add the configuration to the page.
-  $attached = flexslider_add($variables['attributes']['id'], $variables['settings']['optionset']);
+  $attached = flexslider_add($variables['attributes']['id'], $variables['flexslider']['settings']['optionset']);
   $variables['#attached'] = $attached;
 
 }
@@ -107,7 +109,7 @@ function template_preprocess_flexslider_list(&$variables) {
   $attributes['class'][] = 'slides';
 
   // Build the list.
-  $variables['content']['list'] = array();
+  $variables['content']['list'] = [];
   if (!empty($items)) {
     foreach ($items as $i => $item) {
 
@@ -117,14 +119,14 @@ function template_preprocess_flexslider_list(&$variables) {
       }
 
       // Add the list item render array.
-      $variables['content']['list'][$i] = array(
+      $variables['content']['list'][$i] = [
         '#theme' => 'flexslider_list_item',
         '#item' => $item['slide'],
-        '#settings' => array(
+        '#settings' => [
           'optionset' => $optionset,
-        ),
+        ],
         '#caption' => $caption,
-      );
+      ];
     }
   }
 
@@ -149,7 +151,7 @@ function template_preprocess_flexslider_list_item(&$variables) {
   if ($optionset->getOption('controlNav') === "thumbnails") {
     // If the thumbnails are enabled in the option set,
     // extract the url to set as the thumbnail data.
-    $src = array();
+    $src = [];
     if (!preg_match("/<img.+?src=[\"'](.+?)[\"'].+?>/", $item, $src)) {
       preg_match("/<img.+?srcset=[\"'](.+?)[\"'].+?>/", $item, $src);
     }
@@ -160,7 +162,7 @@ function template_preprocess_flexslider_list_item(&$variables) {
 
     // Let's also get the alt attribute to apply to thumbnails.
     // This only works in library version 2.6+.
-    $alt = array();
+    $alt = [];
     preg_match("/<img.+?alt=[\"'](.+?)[\"'].+?>/", $item, $alt);
 
     if (!empty($alt)) {
